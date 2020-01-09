@@ -117,6 +117,12 @@ levels_row <- ""
 # Run code
 ```{r}
 
+# Declare functions
+# Note: if running this locally in RStudio, you may need to click "Session" >> "Set Working Directory" >> "To Source File Location"
+source('create_dataset.R')
+source('run_one_simulation.R')
+source('analyze_results.R')
+
 # Create data frame of simulation levels
 levels[["sim_sub_index"]] <- seq(from=1, to=num_sim)
 levels_grid <- expand.grid(levels)
