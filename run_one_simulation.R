@@ -3,6 +3,7 @@
 #     - `i`: unused; facilitates parallelization
 #     - `levels_row`: a one-row data frame containing simulation levels
 #     - `constants`: a list containing simulation constants
+#     - `dataset`: either a dataset returned by create_dataset() (if `config$dataset`=='one') or NULL (if `config$dataset`=='many')
 # - Output
 #     - A list containing the results of one simulation, with the following fields:
 #         - `sim_index`: index (integer) of the simulation
@@ -13,19 +14,21 @@
 #     - This function runs a single simulation
 #     - Note: `i` is unused; facilitates parallelization
 
-run_one_simulation <- function(i, levels_row, constants) {
+run_one_simulation <- function(i, levels_row, constants, dataset) {
   
   # Get level/constant variables
-  sim_index <- levels_row$sim_index
   dim_1 <- levels_row$dimension_1
-  n <- constants$n
   
   # Create dataset
-  data <- create_dataset(
-    n = n,
-    parallel_inner = ifelse(constants$parallel=="inner", TRUE, FALSE),
-    levels_row = levels_row
-  )
+  if (config$dataset=='many') {
+    dataset <- create_dataset(
+      n = constants$n,
+      parallel_inner = ifelse(
+        config$parallel=="inner", TRUE, FALSE
+      ),
+      levels_row = levels_row
+    )
+  }
   
   # Define local variables
   n_inner <- 10
@@ -44,7 +47,7 @@ run_one_simulation <- function(i, levels_row, constants) {
   }
   
   # Run parallel tasks
-  if (constants$parallel == "inner") {
+  if (config$parallel == "inner") {
     
     # Export variables/functions
     clusterExport(cl, cluster_export)
@@ -66,8 +69,8 @@ run_one_simulation <- function(i, levels_row, constants) {
   
   # Return results list
   return (list(
-    "sim_index" = i,
-    "data" = data,
+    "sim_index" = levels_row$sim_index,
+    "dataset" = dataset,
     "summary" = list(
       "stat_1" = NA,
       "stat_2" = NA

@@ -12,11 +12,17 @@ editor_options:
 # Configuration
 - Manually modify this section to control simulation configuration
 - `levels` specifies a list of "simulation levels", the simulation will be done for each combination of levels
-- `num_sim` controls the number of simulations to be done for each level combination
-- `constants` is a list of variables that remain constant across all simulations. It includes `parallel`, which can take on one of the following values:
-    - "inner": parallelization is done within a single simulation
-    - "outer": parallelization is done across multiple simulations, i.e. one simulation per thread/node
-    - "none": no parallelization is done; useful for debugging
+simulation
+    - "one": use the same dataset for all simulations
+    - "many": generate a new dataset for each simulation
+- `config` is a list of variables that remain constant across all simulations. It includes the following:
+    - `num_sim` controls the number of simulations to be done for each level combination
+    - `datasets` specifies whether to use one generated dataset for all simulations versus generating a new dataset for each simulation
+    - `parallel` controls which sections of the code are parallelized (i.e. for speed gains on multicore/cluster computing systems). It can take on one of the following values:
+        - "inner": parallelization is done within a single simulation
+        - "outer": parallelization is done across multiple simulations, i.e. one simulation per thread/node
+        - "none": no parallelization is done; useful for debugging
+- `constants` is a list of simulation-specific variables that remain constant across all simulations.
 ```{r}
 
 # Define simulation levels
@@ -26,22 +32,27 @@ levels <- list(
   "dimension_2" = c(10,100,1000)
 )
 
-# Define number of simulations per level
-num_sim <- 3
+# Define simulation configuration constants
+# `config` should be accessed globally
+config <- list(
+  "num_sim" = 3,
+  "datasets" = "one",
+  "parallel" = "inner"
+)
 
 # Define simulation constants
 # `constants` should be accessed globally
-# `parallel` can be set to "inner", "outer", or "none"
 constants <- list(
-  "parallel" = "inner",
   "n" = 10,
   "constant_2" = 123
 )
 
 # Define list of functions/globals to export to cluster
 # Try to avoid passing in globals if possible
-cluster_export = c("run_one_simulation", "levels_grid", "constants",
-                   "create_dataset", "levels_row")
+cluster_export = c(
+  "run_one_simulation", "levels_grid", "config", "constants",
+  "create_dataset", "levels_row", "dataset"
+)
 
 # When running on cluster, catch config variables via `argparse`
 # When running locally, set config variables in the `else` section
@@ -120,26 +131,50 @@ levels_row <- ""
 # Declare functions
 # Note: if running this locally in RStudio, you may need to click "Session" >> "Set Working Directory" >> "To Source File Location"
 source('create_dataset.R')
+source('take_sample.R')
 source('run_one_simulation.R')
 source('analyze_results.R')
 
 # Create data frame of simulation levels
-levels[["sim_sub_index"]] <- seq(from=1, to=num_sim)
+levels[["sim_sub_index"]] <- seq(from=1, to=config$num_sim)
 levels_grid <- expand.grid(levels)
 levels_names <- names(levels_grid)
 levels_grid <- cbind(1:nrow(levels_grid), levels_grid)
 names(levels_grid) <- c("sim_index",levels_names)
 
 # Run simulations
-if (constants$parallel == "outer") {
+if (config$parallel == "outer") {
+  
+  # Generate dataset
+  # Note: when config$dataset == "one", create_dataset() should not depend on levels_grid
+  if (config$dataset == "one") {
+    dataset <- create_dataset(
+      n = constants$n,
+      parallel_inner = ifelse(
+        config$parallel=="inner", TRUE, FALSE
+      ),
+      levels_row = as.list(levels_grid[1,])
+    )
+  } else {
+    dataset <- NULL
+  }
   
   # Export variables/functions
   clusterExport(cl, cluster_export)
   
   # Run in parallel
-  results_lists <- parLapply(cl, 1:nrow(levels_grid), function(i) {
-    run_one_simulation(i, as.list(levels_grid[i,]), constants)
-  })
+  results_lists <- parLapply(
+    cl,
+    1:nrow(levels_grid),
+    function(i) {
+      run_one_simulation(
+        i,
+        as.list(levels_grid[i,]),
+        constants,
+        dataset
+      )
+    }
+  )
   
 } else {
   
