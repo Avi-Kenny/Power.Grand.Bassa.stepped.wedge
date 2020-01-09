@@ -1,0 +1,170 @@
+---
+title: "Sample Size - Grand Bassa Stepped Wedge"
+# output: html_document
+# output: pdf_document
+output: word_document
+editor_options:
+  chunk_output_type: console
+---
+
+
+
+# Configuration
+- Manually modify this section to control simulation configuration
+- `levels` specifies a list of "simulation levels", the simulation will be done for each combination of levels
+- `num_sim` controls the number of simulations to be done for each level combination
+- `constants` is a list of variables that remain constant across all simulations. It includes `parallel`, which can take on one of the following values:
+    - "inner": parallelization is done within a single simulation
+    - "outer": parallelization is done across multiple simulations, i.e. one simulation per thread/node
+    - "none": no parallelization is done; useful for debugging
+```{r}
+
+# Define simulation levels
+# `levels` should not be accessed globally. Instead, within run_one_simulation(), call levels_row$dimension_1, etc.
+levels <- list(
+  "dimension_1" = c(33,44,55),
+  "dimension_2" = c(10,100,1000)
+)
+
+# Define number of simulations per level
+num_sim <- 3
+
+# Define simulation constants
+# `constants` should be accessed globally
+# `parallel` can be set to "inner", "outer", or "none"
+constants <- list(
+  "parallel" = "inner",
+  "n" = 10,
+  "constant_2" = 123
+)
+
+# Define list of functions/globals to export to cluster
+# Try to avoid passing in globals if possible
+cluster_export = c("run_one_simulation", "levels_grid", "constants",
+                   "create_dataset", "levels_row")
+
+# When running on cluster, catch config variables via `argparse`
+# When running locally, set config variables in the `else` section
+if (exists("p_args")) {
+  var_1 <- p_args$var_1
+  var_2 <- p_args$var_2
+} else {
+  
+  # Description of `var_1`
+  var_1 <- NA
+  
+  # Description of `var_2`
+  var_2 <- NA
+  
+}
+
+```
+
+
+
+# Load libraries
+```{r warning=FALSE, message=FALSE}
+
+# Set `libloc` variable if script is running locally
+# Note: `libloc` variable set in `run_rmd.R`
+if (!exists("libloc")) { libloc <- .libPaths() }
+
+# Load libraries
+# Note: `libloc` variable set in `run_rmd.R`
+library(parallel, lib.loc=libloc)
+library(ggplot2, lib.loc=libloc)
+# ...
+
+```
+
+
+
+# Setup
+- This section will not typically need to be modified
+```{r}
+
+# Remove variables set in `run_rmd.R`
+if (exists("path")) { rm(path) }
+if (typeof(file)!="closure") { rm(file) }
+
+# Set up cluster
+n_cores <- detectCores() - 1
+cl <- makeCluster(n_cores)
+
+# Set placeholder variables
+levels_row <- ""
+
+# # Set up time log
+# # Note: does not work in parallel; for debugging only
+# times <- c("Start time", round(as.numeric(Sys.time()),1))
+# log_time <- function(label) {
+#   times <<- c(
+#     times,
+#     label,
+#     round(as.numeric(Sys.time()) - as.numeric(times[2]), 1)
+#   )
+# }
+# display_log <- function() {
+#   for (i in 1:length(times)) {
+#     print(times[i])
+#   }
+# }
+
+```
+
+
+
+# Run code
+```{r}
+
+# Create data frame of simulation levels
+levels[["sim_sub_index"]] <- seq(from=1, to=num_sim)
+levels_grid <- expand.grid(levels)
+levels_names <- names(levels_grid)
+levels_grid <- cbind(1:nrow(levels_grid), levels_grid)
+names(levels_grid) <- c("sim_index",levels_names)
+
+# Run simulations
+if (constants$parallel == "outer") {
+  
+  # Export variables/functions
+  clusterExport(cl, cluster_export)
+  
+  # Run in parallel
+  results_lists <- parLapply(cl, 1:nrow(levels_grid), function(i) {
+    run_one_simulation(i, as.list(levels_grid[i,]), constants)
+  })
+  
+} else {
+  
+  # Run in series
+  results_lists <- lapply(1:nrow(levels_grid), function(i) {
+    run_one_simulation(i, as.list(levels_grid[i,]), constants)
+  })
+  
+}
+
+# Convert summary statistics to data frame
+summary_lists <- list()
+for (i in 1:length(results_lists)) {
+  summary_lists[[i]] <- c(
+    list("sim_index" = results_lists[[i]]$sim_index[[1]]),
+    results_lists[[i]]$summary
+  )
+}
+summary <- data.frame(
+  matrix(
+    unlist(summary_lists),
+    nrow = length(summary_lists),
+    byrow = TRUE
+  )
+)
+names(summary) <- names(summary_lists[[1]])
+
+# Join `results` with `levels_grid`
+summary <- dplyr::inner_join(levels_grid, summary, by="sim_index")
+
+# Analyze / view results
+analyze_results(results_list, summary)
+
+```
