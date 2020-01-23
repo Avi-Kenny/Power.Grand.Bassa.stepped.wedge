@@ -1,4 +1,5 @@
 # Load libraries
+# Modify these paths as needed
 libloc <- c(
   .libPaths(),                              # Default
   '/home/students/avikenny/Desktop/R_lib',  # UW - Bayes
@@ -8,7 +9,7 @@ library(knitr, lib.loc=libloc)
 library(rmarkdown, lib.loc=libloc)
 
 # Set path
-path <- '/home/students/avikenny/Desktop/'
+path <- '/home/students/avikenny/Desktop/Power-Grand-Bassa-stepped-wedge/'
 
 # Set file
 file <- 'MAIN.Rmd'

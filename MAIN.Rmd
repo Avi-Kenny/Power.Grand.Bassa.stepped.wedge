@@ -43,8 +43,15 @@ config <- list(
 # Define simulation constants
 # `constants` should be accessed globally
 constants <- list(
-  "n" = 10,
-  "constant_2" = 123
+  "sampling_frame" = read_excel(
+    "data/GrandBassa2020SamplingFrame_truncated.xlsx"
+  ) %>%
+    rowid_to_column("community_id") %>%
+    rename(
+      'num_hh' = `numHH`,
+      'health_district' = `map_health_district`,
+      'admin_district' = `map_adm_distri`
+    )
 )
 
 # Define list of functions/globals to export to cluster
@@ -84,6 +91,10 @@ if (!exists("libloc")) { libloc <- .libPaths() }
 # Note: `libloc` variable set in `run_rmd.R`
 library(parallel, lib.loc=libloc)
 library(ggplot2, lib.loc=libloc)
+library(readxl, lib.loc=libloc)
+library(magrittr, lib.loc=libloc)
+library(dplyr, lib.loc=libloc)
+library(tibble, lib.loc=libloc)
 # ...
 
 ```
@@ -96,6 +107,7 @@ library(ggplot2, lib.loc=libloc)
 
 # Remove variables set in `run_rmd.R`
 if (exists("path")) { rm(path) }
+if (exists("n")) { rm(n) }
 if (typeof(file)!="closure") { rm(file) }
 
 # Set up cluster
@@ -130,10 +142,10 @@ levels_row <- ""
 
 # Declare functions
 # Note: if running this locally in RStudio, you may need to click "Session" >> "Set Working Directory" >> "To Source File Location"
-source('create_dataset.R')
-source('take_sample.R')
-source('run_one_simulation.R')
-source('analyze_results.R')
+source('R/create_dataset.R')
+source('R/take_sample.R')
+source('R/run_one_simulation.R')
+source('R/analyze_results.R')
 
 # Create data frame of simulation levels
 levels[["sim_sub_index"]] <- seq(from=1, to=config$num_sim)
@@ -149,7 +161,7 @@ if (config$parallel == "outer") {
   # Note: when config$dataset == "one", create_dataset() should not depend on levels_grid
   if (config$dataset == "one") {
     dataset <- create_dataset(
-      n = constants$n,
+      sampling_frame = constants$sampling_frame,
       parallel_inner = ifelse(
         config$parallel=="inner", TRUE, FALSE
       ),

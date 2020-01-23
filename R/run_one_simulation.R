@@ -22,7 +22,7 @@ run_one_simulation <- function(i, levels_row, constants, dataset) {
   # Create dataset
   if (config$dataset=='many') {
     dataset <- create_dataset(
-      n = constants$n,
+      sampling_frame = constants$sampling_frame,
       parallel_inner = ifelse(
         config$parallel=="inner", TRUE, FALSE
       ),
