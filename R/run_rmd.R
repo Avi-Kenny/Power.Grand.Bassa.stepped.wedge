@@ -15,14 +15,14 @@ path <- '/home/students/avikenny/Desktop/Power-Grand-Bassa-stepped-wedge/'
 file <- 'MAIN.Rmd'
 
 # Generate random number to give unique filename
-n <- sample(100000000:999999999,1)
+num <- sample(100000000:999999999,1)
 
 # Knit file
 knit(
   input = paste(path, file, sep=''),
-  output = paste(path, substr(file,1,nchar(file)-4),'_',n,'.md', sep='')
+  output = paste(path, substr(file,1,nchar(file)-4),'_',num,'.md', sep='')
 )
 render(
-  input = paste(path, substr(file,1,nchar(file)-4),'_',n,'.md', sep=''),
+  input = paste(path, substr(file,1,nchar(file)-4),'_',num,'.md', sep=''),
   output_format = word_document()
 )

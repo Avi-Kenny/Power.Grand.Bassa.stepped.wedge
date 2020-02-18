@@ -9,6 +9,27 @@ editor_options:
 
 
 
+# Load libraries
+```{r warning=FALSE, message=FALSE}
+
+# Set `libloc` variable if script is running locally
+# Note: `libloc` variable set in `run_rmd.R`
+if (!exists("libloc")) { libloc <- .libPaths() }
+
+# Load libraries
+# Note: `libloc` variable set in `run_rmd.R`
+library(parallel, lib.loc=libloc)
+library(ggplot2, lib.loc=libloc)
+library(readxl, lib.loc=libloc)
+library(magrittr, lib.loc=libloc)
+library(dplyr, lib.loc=libloc)
+library(tibble, lib.loc=libloc)
+# ...
+
+```
+
+
+
 # Configuration
 - Manually modify this section to control simulation configuration
 - `levels` specifies a list of "simulation levels", the simulation will be done for each combination of levels
@@ -61,42 +82,6 @@ cluster_export = c(
   "create_dataset", "levels_row", "dataset"
 )
 
-# When running on cluster, catch config variables via `argparse`
-# When running locally, set config variables in the `else` section
-if (exists("p_args")) {
-  var_1 <- p_args$var_1
-  var_2 <- p_args$var_2
-} else {
-  
-  # Description of `var_1`
-  var_1 <- NA
-  
-  # Description of `var_2`
-  var_2 <- NA
-  
-}
-
-```
-
-
-
-# Load libraries
-```{r warning=FALSE, message=FALSE}
-
-# Set `libloc` variable if script is running locally
-# Note: `libloc` variable set in `run_rmd.R`
-if (!exists("libloc")) { libloc <- .libPaths() }
-
-# Load libraries
-# Note: `libloc` variable set in `run_rmd.R`
-library(parallel, lib.loc=libloc)
-library(ggplot2, lib.loc=libloc)
-library(readxl, lib.loc=libloc)
-library(magrittr, lib.loc=libloc)
-library(dplyr, lib.loc=libloc)
-library(tibble, lib.loc=libloc)
-# ...
-
 ```
 
 
@@ -107,7 +92,7 @@ library(tibble, lib.loc=libloc)
 
 # Remove variables set in `run_rmd.R`
 if (exists("path")) { rm(path) }
-if (exists("n")) { rm(n) }
+if (exists("num")) { rm(num) }
 if (typeof(file)!="closure") { rm(file) }
 
 # Set up cluster
@@ -116,22 +101,6 @@ cl <- makeCluster(n_cores)
 
 # Set placeholder variables
 levels_row <- ""
-
-# # Set up time log
-# # Note: does not work in parallel; for debugging only
-# times <- c("Start time", round(as.numeric(Sys.time()),1))
-# log_time <- function(label) {
-#   times <<- c(
-#     times,
-#     label,
-#     round(as.numeric(Sys.time()) - as.numeric(times[2]), 1)
-#   )
-# }
-# display_log <- function() {
-#   for (i in 1:length(times)) {
-#     print(times[i])
-#   }
-# }
 
 ```
 
@@ -144,6 +113,7 @@ levels_row <- ""
 # Note: if running this locally in RStudio, you may need to click "Session" >> "Set Working Directory" >> "To Source File Location"
 source('R/create_dataset.R')
 source('R/take_sample.R')
+source('R/birth_history.R')
 source('R/run_one_simulation.R')
 source('R/analyze_results.R')
 
@@ -165,7 +135,8 @@ if (config$parallel == "outer") {
       parallel_inner = ifelse(
         config$parallel=="inner", TRUE, FALSE
       ),
-      levels_row = as.list(levels_grid[1,])
+      levels_row = as.list(levels_grid[1,]),
+      program_effect = TRUE # !!!!! Placeholder
     )
   } else {
     dataset <- NULL
