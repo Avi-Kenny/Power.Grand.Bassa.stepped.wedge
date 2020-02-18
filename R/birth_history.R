@@ -68,7 +68,6 @@ birth_history <- function(mother_age) {
       if (alive[i] == 1 & (child_birth_year + j)<=2023) {
         
         current_year <- child_birth_year + j
-        print(paste("child is",j,"in year",current_year))
         death_prob <- baseline_mortality(current_year)/(5*1000) # !!!!! Placeholder
         
         if (runif(1)<death_prob) {
