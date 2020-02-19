@@ -1,12 +1,12 @@
 # FN: Sample from a birth history distribution
 # - Inputs
-#     - `mother_age`: the mother's age
+#     - `woman_age`: the woman's age
 # - Output
 #     - An entire birth history sampled from a distribution
 # - Description
 #     - Note: this function is not deterministic; use set.seed() if exact reproduction of results is necessary
 
-birth_history <- function(mother_age) {
+birth_history <- function(woman_age) {
   
   # CMC helper functions
   # !!!!! Consider moving these elsewhere
@@ -34,12 +34,12 @@ birth_history <- function(mother_age) {
     
   }
   
-  # Loop through mother's ages to generate births
-  # !!!!! Need more accurate birth probabilities as a function of mother's age and current year
+  # Loop through woman-years to generate births
+  # !!!!! Need more accurate birth probabilities as a function of woman's age and current year
   birthdates_cmc <- c()
-  for (i in 13:(mother_age-1)) {
+  for (i in 13:(woman_age-1)) {
     
-    current_year <- 2023 - mother_age + i
+    current_year <- 2023 - woman_age + i
     birth_prob <- 1/6 # !!!!! Placeholder
     
     if (runif(1)<birth_prob) {
@@ -56,30 +56,31 @@ birth_history <- function(mother_age) {
   # !!!!! Assume for simplicity that entire survey is done in Jan 2023
   alive <- c()
   deathdates_cmc <- c()
-  for (i in 1:length(birthdates_cmc)) {
+  if (length(birthdates_cmc) >= 1) {
     
-    alive[i] <- 1
-    deathdates_cmc[i] <- NA
-    birthdate_cmc <- birthdates_cmc[i]
-    child_birth_year <- cmc_to_dates(birthdate_cmc)$year
-    
-    for (j in 1:5) {
+    for (i in 1:length(birthdates_cmc)) {
       
-      if (alive[i] == 1 & (child_birth_year + j)<=2023) {
+      alive[i] <- 1
+      deathdates_cmc[i] <- NA
+      birthdate_cmc <- birthdates_cmc[i]
+      child_birth_year <- cmc_to_dates(birthdate_cmc)$year
+      
+      for (j in 1:5) {
         
-        current_year <- child_birth_year + j
-        death_prob <- baseline_mortality(current_year)/(5*1000) # !!!!! Placeholder
-        
-        if (runif(1)<death_prob) {
-          alive[i] <- 0
-          deathdate <- dates_to_cmc(year=current_year, month=sample(1:12,1))
-          deathdates_cmc[i] <- deathdate
+        if (alive[i] == 1 & (child_birth_year + j)<=2023) {
+          
+          current_year <- child_birth_year + j
+          death_prob <- baseline_mortality(current_year)/(5*1000) # !!!!! Placeholder
+          
+          if (runif(1)<death_prob) {
+            alive[i] <- 0
+            deathdate <- dates_to_cmc(year=current_year, month=sample(1:12,1))
+            deathdates_cmc[i] <- deathdate
+          }
+          
         }
-        
       }
-      
     }
-    
   }
   
   

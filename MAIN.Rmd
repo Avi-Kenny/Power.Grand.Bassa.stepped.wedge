@@ -24,6 +24,7 @@ library(readxl, lib.loc=libloc)
 library(magrittr, lib.loc=libloc)
 library(dplyr, lib.loc=libloc)
 library(tibble, lib.loc=libloc)
+library(rlist, lib.loc=libloc)
 # ...
 
 ```
@@ -49,15 +50,14 @@ simulation
 # Define simulation levels
 # `levels` should not be accessed globally. Instead, within run_one_simulation(), call levels_row$dimension_1, etc.
 levels <- list(
-  "dimension_1" = c(33,44,55),
-  "dimension_2" = c(10,100,1000)
+  "n_clusters" = c(100,200,400)
 )
 
 # Define simulation configuration constants
 # `config` should be accessed globally
 config <- list(
   "num_sim" = 3,
-  "datasets" = "one",
+  "datasets" = "many",
   "parallel" = "inner"
 )
 
@@ -79,7 +79,7 @@ constants <- list(
 # Try to avoid passing in globals if possible
 cluster_export = c(
   "run_one_simulation", "levels_grid", "config", "constants",
-  "create_dataset", "levels_row", "dataset"
+  "create_dataset", "levels_row", "dataset", "list.filter"
 )
 
 ```
