@@ -1,9 +1,7 @@
 # FN: Create dataset
 # - Inputs
 #     - `sampling_frame`: GrandBassa2020SamplingFrame_truncated.xlsx
-#     - `parallel_inner`: T/F; whether to parallelize inner computations of dataset creation
-#     - `levels_row`: a list of simulation levels
-#     - `program_effect`: TO DO
+#     - `program_effect`: Percent reduction in U5MR in intervention group !!!!! TO DO
 # - Output
 #     - A data frame containing the following fields:
 #         - `patient_id`: unique ID of an individual
@@ -12,9 +10,7 @@
 # - Description
 #     - This function creates a simulated dataset
 
-create_dataset <- function(
-  sampling_frame, parallel_inner, levels_row, program_effect
-) {
+create_dataset <- function(sampling_frame, program_effect) {
   
   population <- list()
   woman_id <- 0

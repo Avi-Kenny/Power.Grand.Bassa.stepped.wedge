@@ -1,7 +1,5 @@
 ---
 title: "Sample Size - Grand Bassa Stepped Wedge"
-# output: html_document
-# output: pdf_document
 output: word_document
 editor_options:
   chunk_output_type: console
@@ -9,61 +7,50 @@ editor_options:
 
 
 
-# Load libraries
+# Load packages
 ```{r warning=FALSE, message=FALSE}
 
-# Set `libloc` variable if script is running locally
-# Note: `libloc` variable set in `run_rmd.R`
-if (!exists("libloc")) { libloc <- .libPaths() }
+# devtools::install_github("Avi-Kenny/simba")
 
 # Load libraries
-# Note: `libloc` variable set in `run_rmd.R`
-library(parallel, lib.loc=libloc)
-library(ggplot2, lib.loc=libloc)
-library(readxl, lib.loc=libloc)
-library(magrittr, lib.loc=libloc)
-library(dplyr, lib.loc=libloc)
-library(tibble, lib.loc=libloc)
-library(rlist, lib.loc=libloc)
+library(parallel)
+library(ggplot2)
+library(readxl)
+library(magrittr)
+library(dplyr)
+library(simba)
+library(tibble)
+library(rlist)
 # ...
 
 ```
 
 
 
-# Configuration
-- Manually modify this section to control simulation configuration
-- `levels` specifies a list of "simulation levels", the simulation will be done for each combination of levels
-simulation
-    - "one": use the same dataset for all simulations
-    - "many": generate a new dataset for each simulation
-- `config` is a list of variables that remain constant across all simulations. It includes the following:
-    - `num_sim` controls the number of simulations to be done for each level combination
-    - `datasets` specifies whether to use one generated dataset for all simulations versus generating a new dataset for each simulation
-    - `parallel` controls which sections of the code are parallelized (i.e. for speed gains on multicore/cluster computing systems). It can take on one of the following values:
-        - "inner": parallelization is done within a single simulation
-        - "outer": parallelization is done across multiple simulations, i.e. one simulation per thread/node
-        - "none": no parallelization is done; useful for debugging
-- `constants` is a list of simulation-specific variables that remain constant across all simulations.
+# Simulation setup
 ```{r}
 
-# Define simulation levels
-# `levels` should not be accessed globally. Instead, within run_one_simulation(), call levels_row$dimension_1, etc.
-levels <- list(
-  "n_clusters" = c(100,200,400)
+# Load functions
+# Note: if running this locally in RStudio, you may need to click "Session" >> "Set Working Directory" >> "To Source File Location"
+source("R/create_dataset.R")
+source("R/birth_history.R")
+source("R/analyze_results.R")
+source("R/take_sample.R")
+
+sim <- new_sim()
+
+sim %<>% set_config(
+  num_sim = 10,
+  datasets = "many",
+  parallel = "outer",
+  packages = c("magrittr", "dplyr")
 )
 
-# Define simulation configuration constants
-# `config` should be accessed globally
-config <- list(
-  "num_sim" = 3,
-  "datasets" = "many",
-  "parallel" = "inner"
+sim %<>% set_levels(
+  "sample_size" = c(10, 100, 1000)
 )
 
-# Define simulation constants
-# `constants` should be accessed globally
-constants <- list(
+sim %<>% add_constants(
   "sampling_frame" = read_excel(
     "data/GrandBassa2020SamplingFrame_truncated.xlsx"
   ) %>%
@@ -75,120 +62,47 @@ constants <- list(
     )
 )
 
-# Define list of functions/globals to export to cluster
-# Try to avoid passing in globals if possible
-cluster_export = c(
-  "run_one_simulation", "levels_grid", "config", "constants",
-  "create_dataset", "levels_row", "dataset", "list.filter"
-)
+sim %<>% add_creator(create_dataset)
 
-```
+sim %<>% add_method(analyze_results)
 
-
-
-# Setup
-- This section will not typically need to be modified
-```{r}
-
-# Remove variables set in `run_rmd.R`
-if (exists("path")) { rm(path) }
-if (exists("num")) { rm(num) }
-if (typeof(file)!="closure") { rm(file) }
-
-# Set up cluster
-n_cores <- detectCores() - 1
-cl <- makeCluster(n_cores)
-
-# Set placeholder variables
-levels_row <- ""
-
-```
-
-
-
-# Run code
-```{r}
-
-# Declare functions
-# Note: if running this locally in RStudio, you may need to click "Session" >> "Set Working Directory" >> "To Source File Location"
-source('R/create_dataset.R')
-source('R/take_sample.R')
-source('R/birth_history.R')
-source('R/run_one_simulation.R')
-source('R/analyze_results.R')
-
-# Create data frame of simulation levels
-levels[["sim_sub_index"]] <- seq(from=1, to=config$num_sim)
-levels_grid <- expand.grid(levels)
-levels_names <- names(levels_grid)
-levels_grid <- cbind(1:nrow(levels_grid), levels_grid)
-names(levels_grid) <- c("sim_index",levels_names)
-
-# Run simulations
-if (config$parallel == "outer") {
-  
-  # Generate dataset
-  # Note: when config$dataset == "one", create_dataset() should not depend on levels_grid
-  if (config$dataset == "one") {
+sim %<>% add_script(
+  "script_1",
+  function(L, C) {
+    
+    # Generate population
     dataset <- create_dataset(
-      sampling_frame = constants$sampling_frame,
-      parallel_inner = ifelse(
-        config$parallel=="inner", TRUE, FALSE
-      ),
-      levels_row = as.list(levels_grid[1,]),
-      program_effect = TRUE # !!!!! Placeholder
+      sampling_frame = C$sampling_frame,
+      program_effect = 0.25
     )
-  } else {
-    dataset <- NULL
+    
+    # Take a sample from population
+    sample <- take_sample(
+      population = dataset,
+      sampling_frame = C$sampling_frame,
+      n_clusters = L$sample_size
+    )
+    
+    estimate <- analyze_results(sample)
+    
+    return (list(
+      "estimate" = estimate
+    ))
+    
   }
-  
-  # Export variables/functions
-  clusterExport(cl, cluster_export)
-  
-  # Run in parallel
-  results_lists <- parLapply(
-    cl,
-    1:nrow(levels_grid),
-    function(i) {
-      run_one_simulation(
-        i,
-        as.list(levels_grid[i,]),
-        constants,
-        dataset
-      )
-    }
-  )
-  
-} else {
-  
-  # Run in series
-  results_lists <- lapply(1:nrow(levels_grid), function(i) {
-    run_one_simulation(i, as.list(levels_grid[i,]), constants)
-  })
-  
-}
-
-# Convert summary statistics to data frame
-summary_lists <- list()
-for (i in 1:length(results_lists)) {
-  summary_lists[[i]] <- c(
-    list("sim_index" = results_lists[[i]]$sim_index[[1]]),
-    results_lists[[i]]$summary
-  )
-}
-summary <- data.frame(
-  matrix(
-    unlist(summary_lists),
-    nrow = length(summary_lists),
-    byrow = TRUE
-  )
 )
-names(summary) <- names(summary_lists[[1]])
 
-# Join `results` with `levels_grid`
-summary <- dplyr::inner_join(levels_grid, summary, by="sim_index")
+```
 
-# Analyze / view results
-analyze_results(results_list, summary)
+
+
+# Run simulation
+```{r}
+
+# Run simulation
+results <- sim %>% run("script_1")
+
+# Summarize results (with standard deviations)
+summary(results, sd=TRUE)
 
 ```
