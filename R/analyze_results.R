@@ -1,10 +1,9 @@
-# FN: Analyze results
-# - Inputs
-#     - `results`: a results object created in the "Run code" section
-# - Output
-#     - (none)
-# - Description
-#     - Prints simulation results
+#' Analyze results
+#'
+#' @param results !!!!! TO DO
+#' @return A list containing the following: \cr
+#'     * `params`: !!!!! TO DO \cr
+#'     * `data`: !!!!! TO DO
 
 analyze_results <- function(results_list, summary) {
   

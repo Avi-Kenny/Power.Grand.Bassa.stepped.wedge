@@ -1,14 +1,10 @@
-# FN: Create dataset
-# - Inputs
-#     - `sampling_frame`: GrandBassa2020SamplingFrame_truncated.xlsx
-#     - `program_effect`: Percent reduction in U5MR in intervention group !!!!! TO DO
-# - Output
-#     - A data frame containing the following fields:
-#         - `patient_id`: unique ID of an individual
-#         - `sex`: individual's sex
-#         - `...`: ...
-# - Description
-#     - This function creates a simulated dataset
+#' Generate one simulated dataset representing the Grand Bassa population
+#'
+#' @param sampling_frame GrandBassa2020SamplingFrame_truncated.xlsx
+#' @param program_effect Percent reduction in U5MR in intervention group
+#' @return A data frame containing the following: \cr
+#'     * `x`: !!!!! TO DO \cr
+#'     * `x`: !!!!! TO DO
 
 create_dataset <- function(sampling_frame, program_effect) {
   

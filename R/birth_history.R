@@ -1,10 +1,13 @@
-# FN: Sample from a birth history distribution
-# - Inputs
-#     - `woman_age`: the woman's age
-# - Output
-#     - An entire birth history sampled from a distribution
-# - Description
-#     - Note: this function is not deterministic; use set.seed() if exact reproduction of results is necessary
+#' Generate one stepped wedge dataset
+#'     Note: this function is not deterministic; use set.seed() if exact
+#'     reproduction of results is necessary
+#'
+#' @param woman_age The woman's age (in years)
+#' @return A list representing the entire birth history for a single woman,
+#'     sampled from a distribution, containing the following: \cr
+#'     * `birthdates_cmc`: birth dates of all children (in CMC)
+#'     * `alive`: binary vector representing whether children are still alive
+#'     * `deathdates_cmc`: death dates of all children (in CMC)
 
 birth_history <- function(woman_age) {
   

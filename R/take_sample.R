@@ -1,13 +1,13 @@
-# FN: Take a sample
-# - Inputs
-#     - `population`: a population dataset list returned by create_dataset()
-#     - `sampling_frame`: GrandBassa2020SamplingFrame_truncated.xlsx
-# - Output
-#     - A smaller dataset representing a cluster sample of the entire population
-# - Description
-#     - Simulates the Grand Bassa impact evaluation sampling mechanism
-#     - First state is a simple random sample of communities (not PPS)
-#     - Second state is a census of all women in all households
+#' Take a complex sample from the Grand Bassa population
+#'     - Simulates the Grand Bassa impact evaluation sampling mechanism
+#'     - First stage is a simple random sample of communities (not PPS)
+#'     - Second stage is a census of all women in all households
+#'
+#' @param population A population dataset object returned by create_dataset()
+#' @param sampling_frame GrandBassa2020SamplingFrame_truncated.xlsx
+#' @param n_clusters Number of clusters to sample
+#' @return A truncated data frame representing a cluster sample of the entire
+#'     population
 
 take_sample <- function(population, sampling_frame, n_clusters) {
   
