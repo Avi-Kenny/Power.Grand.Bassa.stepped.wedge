@@ -1,15 +1,17 @@
-#' Analyze results
+#' Perform statistical analysis
 #'
 #' @param results !!!!! TO DO
+#' @param type !!!!! TO DO
 #' @return A list containing the following: \cr
 #'     * `params`: !!!!! TO DO \cr
 #'     * `data`: !!!!! TO DO
 
-analyze_results <- function(results_list, summary) {
+perform_analysis <- function(sample, type) {
   
-  # View summary
-  print(summary)
+  # !!!!!
+  reject_h0 <- 0
   
   # ...
+  return(reject_h0)
   
 }
