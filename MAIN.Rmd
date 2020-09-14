@@ -21,7 +21,6 @@ library(dplyr)
 library(simba)
 library(tibble)
 library(rlist)
-# ...
 
 ```
 
@@ -32,9 +31,10 @@ library(rlist)
 
 # Load functions
 # Note: if running this locally in RStudio, you may need to click "Session" >> "Set Working Directory" >> "To Source File Location"
+source("R/helpers.R")
 source("R/create_dataset.R")
 source("R/birth_history.R")
-source("R/analyze_results.R")
+source("R/perform_analysis.R")
 source("R/take_sample.R")
 
 sim <- new_sim()
@@ -43,7 +43,7 @@ sim %<>% set_config(
   num_sim = 10,
   datasets = "many",
   parallel = "outer",
-  packages = c("magrittr", "dplyr")
+  packages = c("magrittr", "dplyr", "tibble", "rlist")
 )
 
 sim %<>% set_levels(
@@ -62,9 +62,14 @@ sim %<>% add_constants(
     )
 )
 
+# Add necessary functions
 sim %<>% add_creator(create_dataset)
-
-sim %<>% add_method(analyze_results)
+sim %<>% add_method(baseline_u5mr)
+sim %<>% add_method(dates_to_cmc)
+sim %<>% add_method(cmc_to_dates)
+sim %<>% add_method(birth_history)
+sim %<>% add_method(take_sample)
+sim %<>% add_method(perform_analysis)
 
 sim %<>% add_script(
   "script_1",
@@ -72,21 +77,25 @@ sim %<>% add_script(
     
     # Generate population
     dataset <- create_dataset(
-      sampling_frame = C$sampling_frame,
-      program_effect = 0.25
+      "sampling_frame" = C$sampling_frame,
+      "program_effect" = 0.25
     )
     
     # Take a sample from population
     sample <- take_sample(
-      population = dataset,
-      sampling_frame = C$sampling_frame,
-      n_clusters = L$sample_size
+      "population" = dataset,
+      "sampling_frame" = C$sampling_frame,
+      "n_clusters" = L$sample_size
     )
     
-    estimate <- analyze_results(sample)
+    # Perform statistical analysis and return result of hypothesis test
+    reject_h0 <- perform_analysis(
+      "sample" = sample,
+      "type" = 1
+    )
     
     return (list(
-      "estimate" = estimate
+      "reject_h0" = reject_h0
     ))
     
   }
@@ -102,7 +111,7 @@ sim %<>% add_script(
 # Run simulation
 results <- sim %>% run("script_1")
 
-# Summarize results (with standard deviations)
+# Summarize results
 summary(results, sd=TRUE)
 
 ```
