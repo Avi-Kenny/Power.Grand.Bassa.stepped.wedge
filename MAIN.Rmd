@@ -20,7 +20,9 @@ library(magrittr)
 library(dplyr)
 library(simba)
 library(tibble)
-library(rlist)
+library(survival)
+library(coxme)
+library(tidyr)
 
 ```
 
@@ -33,9 +35,26 @@ library(rlist)
 # Note: if running this locally in RStudio, you may need to click "Session" >> "Set Working Directory" >> "To Source File Location"
 source("R/helpers.R")
 source("R/create_dataset.R")
-source("R/birth_history.R")
+source("R/create_birth_history.R")
 source("R/perform_analysis.R")
 source("R/take_sample.R")
+
+# Read and transform sampling frame
+sampling_frame <- read_excel("data/GrandBassa2020SamplingFrame_truncated.xlsx")
+sampling_frame %<>% rowid_to_column("community_id")
+sampling_frame %<>% rename(
+  "num_hh" = `numHH`,
+  "health_district" = `map_health_district`,
+  "admin_district" = `map_adm_distri`
+)
+
+# Generate population (one for entire simulation)
+# !!!!! Speed could be substantially increased by generating population AFTER sampling; but not necessary if "one population per simulation" is used
+dataset <- create_dataset(
+  "sampling_frame" = sampling_frame,
+  "program_effect" = 0.25
+)
+# saveRDS(dataset, file="gb_dataset")
 
 sim <- new_sim()
 
@@ -43,63 +62,70 @@ sim %<>% set_config(
   num_sim = 10,
   datasets = "many",
   parallel = "outer",
-  packages = c("magrittr", "dplyr", "tibble", "rlist")
+  packages = c("magrittr", "dplyr", "tibble", "survival", "coxme", "tidyr")
 )
 
 sim %<>% set_levels(
-  "sample_size" = c(10, 100, 1000)
+  "sample_size" = c(200, 500, 1000)
 )
 
 sim %<>% add_constants(
-  "sampling_frame" = read_excel(
-    "data/GrandBassa2020SamplingFrame_truncated.xlsx"
-  ) %>%
-    rowid_to_column("community_id") %>%
-    rename(
-      'num_hh' = `numHH`,
-      'health_district' = `map_health_district`,
-      'admin_district' = `map_adm_distri`
-    )
+  "sampling_frame" = sampling_frame,
+  "dataset" = dataset
 )
 
 # Add necessary functions
-sim %<>% add_creator(create_dataset)
-sim %<>% add_method(baseline_u5mr)
-sim %<>% add_method(dates_to_cmc)
-sim %<>% add_method(cmc_to_dates)
-sim %<>% add_method(birth_history)
-sim %<>% add_method(take_sample)
-sim %<>% add_method(perform_analysis)
+{
+  sim %<>% add_creator(create_dataset)
+  sim %<>% add_method(baseline_u5mr)
+  sim %<>% add_method(dates_to_cmc)
+  sim %<>% add_method(cmc_to_dates)
+  sim %<>% add_method(create_birth_history)
+  sim %<>% add_method(take_sample)
+  sim %<>% add_method(perform_analysis)
+}
 
 sim %<>% add_script(
   "script_1",
-  function(L, C) {
+  function() {
     
-    # Generate population
-    dataset <- create_dataset(
-      "sampling_frame" = C$sampling_frame,
-      "program_effect" = 0.25
-    )
+    # # Generate population
+    # dataset <- create_dataset(
+    #   "sampling_frame" = C$sampling_frame,
+    #   "program_effect" = 0.25
+    # )
     
     # Take a sample from population
     sample <- take_sample(
-      "population" = dataset,
+      "population" = C$dataset,
+      # "population" = dataset,
       "sampling_frame" = C$sampling_frame,
+      # "sampling_frame" = sampling_frame,
       "n_clusters" = L$sample_size
+      # "n_clusters" = 100
     )
     
-    # Perform statistical analysis and return result of hypothesis test
-    reject_h0 <- perform_analysis(
+    # Perform statistical analysis
+    results <- perform_analysis(
       "sample" = sample,
       "type" = 1
     )
     
-    return (list(
-      "reject_h0" = reject_h0
-    ))
+    return (results)
     
   }
 )
+
+# Run simulation
+sim %<>% run("script_1")
+
+# Summarize results
+# !!!!! Calculate ICC and DEFF here
+sim %>% summary() %>%
+  mutate(
+    mean_est_pct_reduction = 1-exp(mean_tx_effect),
+    power = mean_reject_h0
+  )
 
 ```
 
