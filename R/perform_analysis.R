@@ -52,6 +52,7 @@ perform_analysis <- function(sample, type) {
     data = df_joined
   )
   summ_1 <- summary(cox_1)
+  p_1 <- summ_1$coefficients[1,5]
   
   # Model with random intercept for community
   cox_2 <- coxme(
@@ -59,31 +60,30 @@ perform_analysis <- function(sample, type) {
     data = df_joined
   )
   summ_2 <- summary(cox_2)
+  nfrail <- nrow(cox_2$var) - length(cox_2$coefficients)
+  se <- sqrt(diag(cox_2$var)[nfrail + 1:length(cox_2$coefficients)])
+  p_2 <- signif(1 - pchisq((cox_2$coefficients/se)^2, 1), 2)
   
-  # Model with random intercept for community and random treatment effect
-  cox_3 <- coxme(
-    Surv(age_start, age_end, died) ~ tx_status + (0+tx_status|community_id) +
-                                     (1|community_id),
-    data = df_joined
-  )
-  summ_3 <- summary(cox_3)
-  
-  cox_4 <- coxme(
-    Surv(age_start, age_end, died) ~ tx_status + (1+tx_status|community_id),
-    data = df_joined
-  )
-  summ_4 <- summary(cox_4)
+  # # Model with random intercept for community and random treatment effect
+  # cox_3 <- coxme(
+  #   Surv(age_start, age_end, died) ~ tx_status + (0+tx_status|community_id) +
+  #                                    (1|community_id),
+  #   data = df_joined
+  # )
+  # summ_3 <- summary(cox_3)
   
   # Return results
   return(list(
     tx_effect_1 = summ_1$coefficients[1,1],
-    tx_effect_2 = summ_2$coefficients[1,1],
-    tx_effect_3 = summ_3$coefficients[1,1],
-    p_1 = summ_1$coefficients[1,5],
-    p_2 = summ_2$coefficients[1,5],
-    p_3 = summ_3$coefficients[1,5],
-    reject_h0 = ifelse(
-      summ$coefficients[1,1]<0 & summ$coefficients[1,5]<0.05,
+    tx_effect_2 = cox_2$coefficients[[1]],
+    p_1 = p_1,
+    p_2 = p_2,
+    reject_h0_1 = ifelse(
+      summ_1$coefficients[1,1]<0 & p_1<0.05,
+      1, 0
+    ),
+    reject_h0_2 = ifelse(
+      cox_2$coefficients[[1]]<0 & p_2<0.05,
       1, 0
     )
   ))

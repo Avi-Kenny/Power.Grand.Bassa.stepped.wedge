@@ -50,23 +50,30 @@ sampling_frame %<>% rename(
 
 # Generate population (one for entire simulation)
 # !!!!! Speed could be substantially increased by generating population AFTER sampling; but not necessary if "one population per simulation" is used
-dataset <- create_dataset(
-  "sampling_frame" = sampling_frame,
-  "program_effect" = 0.25
-)
-# saveRDS(dataset, file="gb_dataset")
+new_dataset <- FALSE
+if (new_dataset) {
+  dataset <- create_dataset(
+    "sampling_frame" = sampling_frame,
+    "program_effect" = 0.25,
+    "re_comm_sd" = 0.1,
+    "re_tx_sd" = 0.1
+  )
+  saveRDS(dataset, file="gb_dataset")
+} else {
+  dataset <- readRDS("gb_dataset")
+}
 
 sim <- new_sim()
 
 sim %<>% set_config(
-  num_sim = 10,
+  num_sim = 500,
   datasets = "many",
   parallel = "outer",
   packages = c("magrittr", "dplyr", "tibble", "survival", "coxme", "tidyr")
 )
 
 sim %<>% set_levels(
-  "sample_size" = c(200, 500, 1000)
+  "sample_size" = c(350, 450)
 )
 
 sim %<>% add_constants(
@@ -92,17 +99,16 @@ sim %<>% add_script(
     # # Generate population
     # dataset <- create_dataset(
     #   "sampling_frame" = C$sampling_frame,
-    #   "program_effect" = 0.25
+    #   "program_effect" = 0.25,
+    # "re_comm_sd" = 0.1,
+    # "re_tx_sd" = 0.1
     # )
     
     # Take a sample from population
     sample <- take_sample(
       "population" = C$dataset,
-      # "population" = dataset,
       "sampling_frame" = C$sampling_frame,
-      # "sampling_frame" = sampling_frame,
       "n_clusters" = L$sample_size
-      # "n_clusters" = 100
     )
     
     # Perform statistical analysis
@@ -123,8 +129,10 @@ sim %<>% run("script_1")
 # !!!!! Calculate ICC and DEFF here
 sim %>% summary() %>%
   mutate(
-    mean_est_pct_reduction = 1-exp(mean_tx_effect),
-    power = mean_reject_h0
+    mean_est_pct_reduction_1 = 1-exp(mean_tx_effect_1),
+    mean_est_pct_reduction_2 = 1-exp(mean_tx_effect_1),
+    power_1 = mean_reject_h0_1,
+    power_2 = mean_reject_h0_2
   )
 
 ```

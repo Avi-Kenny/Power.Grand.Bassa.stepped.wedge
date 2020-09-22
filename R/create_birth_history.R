@@ -5,9 +5,10 @@
 #' @param woman_age The woman's age (in years)
 #' @param program_effect The program effect, in terms of percent reduction in
 #'     probability of child death
-#' @param cluster_effect A cluster-level random effect with mean 1 that is used
-#'     as a multiplier for the death probability
-#'     probability of child death
+#' @param re_comm A community-level random effect that acts as a multiplier for
+#'     the death probability
+#' @param re_tx A community-level random effect that acts as a multiplier for
+#'     the death probability
 #' @param crossover_date The first month (CMC) at which the program was in the
 #'     intervention state
 #' @return A list representing the entire birth history for a single woman,
@@ -16,21 +17,17 @@
 #'     * `alive`: binary vector representing whether children are still alive
 #'     * `deathdates_cmc`: death dates of all children (in CMC)
 
-create_birth_history <- function(woman_age, program_effect, cluster_effect,
-                          crossover_date) {
+create_birth_history <- function(woman_age, program_effect, re_comm, re_tx,
+                                 crossover_date) {
   
   # Loop through woman-years to generate births
   # i is the "current age" of the woman
-  # !!!!! Consider making this loop start at 13
   birthdates_cmc <- c()
-  for (i in 14:(woman_age-1)) {
+  for (i in 13:(woman_age-1)) {
     
     current_year <- 2023 + i - woman_age
 
     # Generate birth probabilities from Distribution C
-    # !!!!! Probabilities currently seem too high
-    # !!!!! Add a random effect here ?????
-    # !!!!! Check values for ages 13-14
     birth_prob <- case_when(
       i >= 13 & i <= 14 ~ 0.059,
       i >= 15 & i <= 19 ~ 0.246,
@@ -77,9 +74,8 @@ create_birth_history <- function(woman_age, program_effect, cluster_effect,
           
           # Calculate "current" program effect
           # !!!!! Currently modeling program effect onset as an "off/on switch"
-          # !!!!! Need to account for crossover month
           if (j > crossover_date) {
-            program_effect_now = program_effect
+            program_effect_now = program_effect * re_tx
           } else {
             program_effect_now = 0
           }
@@ -136,12 +132,10 @@ create_birth_history <- function(woman_age, program_effect, cluster_effect,
             
           }
           
-          # Multiply the death probability to account for the program effect
-          death_prob_month <- (1-program_effect_now) * death_prob_month
-          
-          # Multiple the death probability to account for the cluster effect
-          cluster_effect <- max(cluster_effect, 0)
-          death_prob_month <- death_prob_month * cluster_effect
+          # Multiply the death probability to account for the program effects
+          #     and the community-level random effect
+          death_prob_month <- (1-program_effect_now) * death_prob_month *
+                              re_comm
           
           # Sample to determine whether child died in the past month
           if (runif(1)<death_prob_month) {

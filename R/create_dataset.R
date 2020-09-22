@@ -2,12 +2,14 @@
 #'
 #' @param sampling_frame GrandBassa2020SamplingFrame_truncated.xlsx
 #' @param program_effect Percent reduction in U5MR in intervention group
+#' @param re_comm_sd Standard deviation of the community-level random effect
+#' @param re_tx_sd Standard deviation of the treatment-level random effect
 #' @param show_progress True/false; should progress statement ("5 of 999
 #'     communities generated") be printed?
 #' @return A list containing the women (a dataframe) and birth histories (a
 #'     list)
 
-create_dataset <- function(sampling_frame, program_effect,
+create_dataset <- function(sampling_frame, program_effect, re_comm_sd, re_tx_sd,
                            show_progress=FALSE) {
   
   women <- data.frame(
@@ -29,8 +31,12 @@ create_dataset <- function(sampling_frame, program_effect,
   woman_id <- 1
   
   # Sample random effects
-  re_comm <- rnorm(n=length(sampling_frame$community_id), mean=0, sd=0.05)
-  re_tx <- rnorm(n=length(sampling_frame$community_id), mean=0, sd=0.05)
+  # The pmax() ensures that probabilities are not multiplied by a negative
+  #     number (although this is extremely unlikely for reasonable SDs)
+  re_comm <- rnorm(n=length(sampling_frame$community_id), mean=1, sd=re_comm_sd)
+  re_tx <- rnorm(n=length(sampling_frame$community_id), mean=1, sd=re_tx_sd)
+  re_comm <- pmax(re_comm,0)
+  re_tx <- pmax(re_tx,0)
   
   # Generate population
   for (i in 1:length(sampling_frame$community_id)) {
@@ -80,11 +86,11 @@ create_dataset <- function(sampling_frame, program_effect,
           )
           
           # Generate birth history
-          # !!!!! Need to account for ICC somewhere here
           bh <- create_birth_history(
             "woman_age" = woman_age,
             "program_effect" = program_effect,
-            "cluster_effect" = cluster_effect,
+            "re_comm" = re_comm[i],
+            "re_tx" = re_tx[i],
             "crossover_date" = crossover_date
           )
           
