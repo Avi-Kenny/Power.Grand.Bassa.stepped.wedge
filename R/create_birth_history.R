@@ -25,7 +25,7 @@ create_birth_history <- function(woman_age, program_effect, re_comm, re_tx,
   birthdates_cmc <- c()
   for (i in 13:(woman_age-1)) {
     
-    current_year <- 2023 + i - woman_age
+    current_year <- 2022 + i - woman_age
 
     # Generate birth probabilities from Distribution C
     birth_prob <- case_when(
@@ -59,12 +59,12 @@ create_birth_history <- function(woman_age, program_effect, re_comm, re_tx,
     
     # Loop through births to generate deaths
     # Variable death_prob will ignore over-five deaths
-    # Assume for simplicity that entire survey is done in Jan 2023
+    # Assume for simplicity that entire survey is done in Jan 2022
     for (i in 1:length(birthdates_cmc)) {
       
       # Loop over months
       j_start <- birthdates_cmc[i]+1
-      j_end <- min(dates_to_cmc(2023,1), j_start+59)
+      j_end <- min(dates_to_cmc(2022,1), j_start+59)
       for (j in j_start:j_end) {
         
         if (alive[i] == 1) {
@@ -86,7 +86,7 @@ create_birth_history <- function(woman_age, program_effect, re_comm, re_tx,
           # death_prob_year <- (1-program_effect_now) * ( baseline_u5mr(
           #   cmc_to_dates(j-1)$year,
           #   start_year = 2000, # !!!!! Placeholder
-          #   end_year = 2023, # !!!!! Placeholder
+          #   end_year = 2022, # !!!!! Placeholder
           #   start_u5mr = 120, # !!!!! Placeholder
           #   end_u5mr = 80 # !!!!! Placeholder
           # ) / 5000 )

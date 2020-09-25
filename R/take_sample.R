@@ -2,32 +2,25 @@
 #'     - Simulates the Grand Bassa impact evaluation sampling mechanism
 #'     - First stage is a simple random sample of communities (not PPS)
 #'     - Second stage is a census of all women in all households
-#'     - !!!!! If we want to test PPS, be sure to sample households from
-#'       sampling frame rather than population dataset, since some households
-#'       have zero women
 #'
-#' @param population A population dataset object returned by create_dataset()
 #' @param sampling_frame GrandBassa2020SamplingFrame_truncated.xlsx
-#' @param n_clusters Number of clusters to sample
-#' @return A truncated data frame representing a cluster sample of the entire
+#' @param n_clusters Number of clusters to sample in first stage
+#' @param type Placeholder, in case we want to add other sampling methods
+#' @return A truncated dataset representing a cluster sample of the entire
 #'     population
 
-take_sample <- function(population, sampling_frame, n_clusters) {
+take_sample <- function(sampling_frame, n_clusters, type="SRS") {
   
-  # Sample communities
-  sampled_communities <- sample(sampling_frame$community_id, size=n_clusters)
+  if (type=="SRS") {
+    
+    # Sample communities
+    sampled_comms <- sample(sampling_frame$community_id, size=n_clusters)
+    
+    # Filter sampling frame
+    sample <- sampling_frame %>% filter(community_id %in% sampled_comms)
+    
+  }
   
-  # Create truncated objects
-  women_sample <- population$women %>% filter(
-    community_id %in% sampled_communities
-  )
-  birth_history_sample <- population$birth_history %>% filter(
-    woman_id %in% women_sample$woman_id
-  )
-  
-  return(list(
-    "women" = women_sample,
-    "birth_history" = birth_history_sample
-  ))
+  return(sample)
   
 }

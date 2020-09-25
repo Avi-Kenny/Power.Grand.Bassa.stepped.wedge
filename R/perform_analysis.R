@@ -1,28 +1,27 @@
 #' Perform statistical analysis
 #'
-#' @param results !!!!! TO DO
-#' @param type !!!!! TO DO
+#' @param dataset A dataset returned by create_dataset()
+#' @param method Placeholder for type of analysis (currently ignored)
 #' @return A list containing the following: \cr
-#'     * `params`: !!!!! TO DO \cr
-#'     * `data`: !!!!! TO DO
+#'     * `tx_effect_i`: Extimated treatment effect for method i \cr
+#'     * `p_i`: P-value corresponding to method i hypothesis test \cr
+#'     * `reject_h0_i`: Binary; whether H_0 was rejected using method i
 
-perform_analysis <- function(sample, type) {
+perform_analysis <- function(dataset, method, recall_years) {
   
-  # !!!!! Pass these in as arguments
-  survey_date <- dates_to_cmc(2023,1)
-  recall_yrs <- 5
+  survey_date <- dates_to_cmc(2022,1)
   
   # Create merged dataset; one row per child
   df_joined <- inner_join(
-    sample$women,
-    sample$birth_history,
+    dataset$women,
+    dataset$birth_history,
     by = "woman_id"
   )
   
   # Data wrangling
-  df_joined$deathdate <- tidyr::replace_na(df_joined$deathdate, 9999)
+  df_joined$deathdate <- replace_na(df_joined$deathdate, 9999)
   df_joined %<>% mutate(
-    time_start = pmax(birthdate, survey_date-(recall_yrs*12)),
+    time_start = pmax(birthdate, survey_date-(recall_years*12)),
     time_end = pmin(deathdate, birthdate+60, survey_date),
     died = 1 - alive
   )
@@ -44,17 +43,16 @@ perform_analysis <- function(sample, type) {
     household_id, admin_district, health_district, alive
   ))
   
-  # !!!!! Add random effect using coxme
+  # Cox model with no random effects
   # https://stats.idre.ucla.edu/r/dae/mixed-effects-cox-regression/#:~:text=Mixed%20effects%20cox%20regression%20models,both%20fixed%20and%20random%20effects.
   cox_1 <- coxph(
     Surv(age_start, age_end, died) ~ tx_status,
-    # id = uid, # !!!!! Testing
     data = df_joined
   )
   summ_1 <- summary(cox_1)
   p_1 <- summ_1$coefficients[1,5]
   
-  # Model with random intercept for community
+  # Cox model with random intercept for community
   cox_2 <- coxme(
     Surv(age_start, age_end, died) ~ tx_status + (1|community_id),
     data = df_joined

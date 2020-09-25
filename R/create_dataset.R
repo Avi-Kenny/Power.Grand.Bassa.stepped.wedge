@@ -1,6 +1,6 @@
 #' Generate one simulated dataset representing the Grand Bassa population
 #'
-#' @param sampling_frame GrandBassa2020SamplingFrame_truncated.xlsx
+#' @param sample A sample, returned by take_sample()
 #' @param program_effect Percent reduction in U5MR in intervention group
 #' @param re_comm_sd Standard deviation of the community-level random effect
 #' @param re_tx_sd Standard deviation of the treatment-level random effect
@@ -9,7 +9,7 @@
 #' @return A list containing the women (a dataframe) and birth histories (a
 #'     list)
 
-create_dataset <- function(sampling_frame, program_effect, re_comm_sd, re_tx_sd,
+create_dataset <- function(sample, program_effect, re_comm_sd, re_tx_sd,
                            show_progress=FALSE) {
   
   women <- data.frame(
@@ -20,6 +20,7 @@ create_dataset <- function(sampling_frame, program_effect, re_comm_sd, re_tx_sd,
     "health_district" = integer(),
     "crossover_date" = integer()
   )
+  
   birth_history <- data.frame(
     "woman_id" = integer(),
     "child_id" = integer(),
@@ -29,19 +30,20 @@ create_dataset <- function(sampling_frame, program_effect, re_comm_sd, re_tx_sd,
   )
   
   woman_id <- 1
+  n_clusters <- length(sample$community_id)
   
   # Sample random effects
   # The pmax() ensures that probabilities are not multiplied by a negative
   #     number (although this is extremely unlikely for reasonable SDs)
-  re_comm <- rnorm(n=length(sampling_frame$community_id), mean=1, sd=re_comm_sd)
-  re_tx <- rnorm(n=length(sampling_frame$community_id), mean=1, sd=re_tx_sd)
+  re_comm <- rnorm(n=n_clusters, mean=1, sd=re_comm_sd)
+  re_tx <- rnorm(n=n_clusters, mean=1, sd=re_tx_sd)
   re_comm <- pmax(re_comm,0)
   re_tx <- pmax(re_tx,0)
   
-  # Generate population
-  for (i in 1:length(sampling_frame$community_id)) {
+  # Generate dataset
+  for (i in 1:n_clusters) {
     
-    for (j in 1:sampling_frame$num_hh[i]) {
+    for (j in 1:sample$num_hh[i]) {
       
       # Generate number of women (age 15-49) in household
       # Corresponds to "Distribution A"
@@ -75,14 +77,14 @@ create_dataset <- function(sampling_frame, program_effect, re_comm_sd, re_tx_sd,
           #     The first month (CMC) at which the program was in the
           #     intervention state
           crossover_date <- case_when(
-            sampling_frame$health_district[i] == "1" ~ dates_to_cmc(2019,11),
-            sampling_frame$health_district[i] == "2" ~ dates_to_cmc(2018,12),
-            sampling_frame$health_district[i] == "3A&B" ~ dates_to_cmc(2018,12),
-            sampling_frame$health_district[i] == "3C" ~ dates_to_cmc(2018,6),
-            sampling_frame$health_district[i] == "4" ~ dates_to_cmc(2021,6), # !!!!! Tentative
-            sampling_frame$health_district[i] == "Campwood" ~ dates_to_cmc(2018,6),
-            sampling_frame$health_district[i] == "Commonwealth" ~ dates_to_cmc(2021,6), # !!!!! Tentative
-            sampling_frame$health_district[i] == "Owensgrove" ~ dates_to_cmc(2019,11)
+            sample$health_district[i] == "1" ~ dates_to_cmc(2019,11),
+            sample$health_district[i] == "2" ~ dates_to_cmc(2018,12),
+            sample$health_district[i] == "3A&B" ~ dates_to_cmc(2018,12),
+            sample$health_district[i] == "3C" ~ dates_to_cmc(2018,6),
+            sample$health_district[i] == "4" ~ dates_to_cmc(2021,6), # !!!!! Tentative
+            sample$health_district[i] == "Campwood" ~ dates_to_cmc(2018,6),
+            sample$health_district[i] == "Commonwealth" ~ dates_to_cmc(2021,6), # !!!!! Tentative
+            sample$health_district[i] == "Owensgrove" ~ dates_to_cmc(2019,11)
           )
           
           # Generate birth history
@@ -97,10 +99,10 @@ create_dataset <- function(sampling_frame, program_effect, re_comm_sd, re_tx_sd,
           # Create women dataframe
           women[nrow(women)+1,] <- list(
             "woman_id" = woman_id,
-            "community_id" = sampling_frame$community_id[i],
+            "community_id" = sample$community_id[i],
             "household_id" = j,
-            "admin_district" = sampling_frame$admin_district[i],
-            "health_district" = sampling_frame$health_district[i],
+            "admin_district" = sample$admin_district[i],
+            "health_district" = sample$health_district[i],
             "crossover_date" = crossover_date
           )
           
@@ -126,7 +128,7 @@ create_dataset <- function(sampling_frame, program_effect, re_comm_sd, re_tx_sd,
     
     if (show_progress) {
       cat(paste(
-        i, "of", length(sampling_frame$community_id), "communities generated\n"
+        i, "of", n_clusters, "communities generated\n"
       ))
     }
     
