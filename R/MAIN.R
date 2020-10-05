@@ -8,16 +8,18 @@
 #########################.
 
 # devtools::install_github("Avi-Kenny/simba")
-library(simba)
-library(parallel)
-library(ggplot2)
-library(readxl)
-library(magrittr)
-library(dplyr)
-library(tibble)
-library(survival)
-library(coxme)
-library(tidyr)
+{
+  library(simba)
+  library(parallel)
+  library(ggplot2)
+  library(readxl)
+  library(magrittr)
+  library(dplyr)
+  library(tibble)
+  library(survival)
+  library(coxme)
+  library(tidyr)
+}
 
 
 
@@ -25,9 +27,11 @@ library(tidyr)
 ##### Simulation setup #####
 ############################.
 
+print(paste("Start time:",Sys.time()))
+
 # Set working directory (if working locally, just set to source file location)
 if (Sys.getenv("USERDOMAIN")=="AVI-KENNY-T460") {
-  setwd("C:/Users/avike/OneDrive/Desktop/Avi/Biostats + Research/Research/Jim Hughes/Project - Stepped wedge/z.stepped.wedge/R")
+  setwd("C:/Users/avike/OneDrive/Desktop/Avi/Last Mile Health/Research + Evaluation/Projects (active)/Grand Bassa impact evaluation/Power-Grand-Bassa-stepped-wedge/R")
 } else {
   setwd("z.Power-Grand-Bassa-stepped-wedge/R")
 }
@@ -67,14 +71,15 @@ sampling_frame %<>% rename(
 sim <- new_sim()
 
 sim %<>% set_config(
-  num_sim = 1,
+  num_sim = 1000,
   datasets = "many",
   parallel = "outer",
   packages = c("magrittr", "dplyr", "tibble", "survival", "coxme", "tidyr")
 )
 
 sim %<>% set_levels(
-  sample_size = c(20, 50) # !!!!! 600, 700
+  sample_size = c(500, 600, 700),
+  program_effect = c(0.2, 0.25)
 )
 
 sim %<>% add_constants(
@@ -105,7 +110,7 @@ sim %<>% add_script(
     # Generate data for sample
     dataset <- create_dataset(
       sample = sample,
-      program_effect = 0.25,
+      program_effect = L$program_effect,
       re_comm_sd = 0.1,
       re_tx_sd = 0.1,
       show_progress = FALSE
@@ -131,12 +136,17 @@ sim %<>% add_script(
 
 # Run simulation
 sim %<>% run("script_1")
+cat("\n\n") # !!!!! temp
 
 # Summarize results
-sim %>% summary() %>%
+summ <- sim %>% summary() %>%
   mutate(
     mean_est_pct_reduction_1 = 1-exp(mean_tx_effect_1),
     mean_est_pct_reduction_2 = 1-exp(mean_tx_effect_1),
     power_1 = mean_reject_h0_1,
     power_2 = mean_reject_h0_2
-  ) %>% print()
+  )
+
+print("Summary")
+print(summ)
+print(paste("End time:",Sys.time()))
