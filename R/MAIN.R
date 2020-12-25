@@ -97,8 +97,7 @@ sim %<>% add_constants(
   sim %<>% add_method(perform_analysis)
 }
 
-sim %<>% add_script(
-  "script_1",
+sim %<>% set_script(
   function() {
     
     # Take a sample from population
@@ -135,7 +134,7 @@ sim %<>% add_script(
 ################################################.
 
 # Run simulation
-sim %<>% run("script_1")
+sim %<>% run()
 cat("\n\n") # !!!!! temp
 
 # Summarize results
