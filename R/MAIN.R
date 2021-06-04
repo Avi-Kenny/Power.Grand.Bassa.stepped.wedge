@@ -13,7 +13,7 @@ cfg <- list(
   level_set_which = "level_set_1",
   run_or_update = "run",
   num_sim = 100, # !!!!!
-  pkgs = c("dplyr", "readxl", "tibble", "survival", "tidyr", "lme4"),
+  pkgs = c("dplyr", "readxl", "tibble", "survival", "tidyr", "lme4", "glmmTMB"),
   pkgs_nocluster = c("ggplot2"),
   parallel = "none",
   stop_at_error = FALSE
@@ -72,10 +72,8 @@ if (Sys.getenv("run") %in% c("first", "")) {
   
   # Compare all methods
   level_set_1 <- list(
-    sample_size = c(500),
-    # sample_size = c(500, 750),
-    program_effect = c(0.2)
-    # program_effect = c(0.2, 0.25)
+    sample_size = c(500, 1000),
+    program_effect = c(0.2, 0.25)
   )
   
   level_set <- eval(as.name(cfg$level_set_which))

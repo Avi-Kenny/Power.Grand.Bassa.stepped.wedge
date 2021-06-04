@@ -11,6 +11,8 @@ one_simulation <- function() {
     type = "SRS"
   )
   
+  # Store number of households in sample
+  
   # Generate data for sample
   dataset <- create_dataset(
     sample = sample,
@@ -32,6 +34,9 @@ one_simulation <- function() {
     method = 999
   )
   
-  return(results)
+  return(c(
+    results,
+    list(num_hh=sum(sample$num_hh))
+  ))
   
 }
