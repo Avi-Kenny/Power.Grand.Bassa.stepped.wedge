@@ -1,7 +1,8 @@
 #' Perform statistical analysis
 #'
 #' @param dataset A dataset returned by transform_dataset()
-#' @param method Placeholder for type of analysis (currently ignored)
+#' @param method Type of analysis; one of c("Mixed model (immediate Tx effect)",
+#'     "Mixed model (time-varying Tx effect)", "Callaway-Sant'Anna")
 #' @return A list containing the following:
 #'   - `tx_effect`: Estimated treatment effect
 #'   - `p`: P-value corresponding to a Wald-type hypothesis test
@@ -13,23 +14,9 @@ perform_analysis <- function(dataset, method) {
   model <- glmmTMB(
     cbind(n_deaths,n_alive-n_deaths) ~ x_ij + factor(month) + (1|community_id),
     data = dataset,
-    family = "binomial"
-    # family = binomial(link="log")
+    family = "binomial" # binomial(link="log")
   )
   summary(model)
-  
-  # # !!!!! Modified Poisson
-  # model_tmb <- glmmTMB(
-  #   n_deaths ~ x_ij + factor(month) + (1|community_id),
-  #   data = dataset,
-  #   offset = n_alive,
-  #   family = "poisson"
-  #   # family = "binomial"
-  #   # family = binomial(link="log")
-  # )
-  
-  # # model_tmb2 <- model_tmb
-  # summary(model_tmb)
   
   # Calculate results
   s <- summary(model)
