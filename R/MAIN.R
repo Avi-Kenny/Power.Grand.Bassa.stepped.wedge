@@ -12,7 +12,7 @@ cfg <- list(
   which_sim = "",
   level_set_which = "level_set_1",
   run_or_update = "run",
-  num_sim = 100, # !!!!!
+  num_sim = 500, # !!!!!
   pkgs = c("dplyr", "readxl", "tibble", "survival", "tidyr", "lme4", "glmmTMB"),
   pkgs_nocluster = c("ggplot2"),
   parallel = "none",
@@ -68,12 +68,15 @@ source("helpers.R")
 ##### MAIN: Set level sets for different simulations #####
 ##########################################################.
 
-if (Sys.getenv("run") %in% c("first", "")) {
+if (Sys.getenv("simba_run") %in% c("first", "")) {
   
   # Compare all methods
   level_set_1 <- list(
-    sample_size = c(500, 1000),
-    program_effect = c(0.2, 0.25)
+    sample_size = c(1000, 1733),
+    program_effect = c(0, 0.2),
+    method = c("Mixed model (immediate Tx effect)",
+               "Mixed model (time-varying Tx effect)",
+               "Callaway-Sant'Anna")
   )
   
   level_set <- eval(as.name(cfg$level_set_which))
@@ -87,9 +90,9 @@ if (Sys.getenv("run") %in% c("first", "")) {
 ##########################################.
 
 # Use these commands to run on Slurm:
-# sbatch --export=run='first',cluster='bionic',type='R',project='z.Power-Grand-Bassa-stepped-wedge' -e ./io/slurm-%A_%a.out -o ./io/slurm-%A_%a.out --constraint=gizmok run_r.sh
-# sbatch --depend=afterok:11 --array=1-20 --export=run='main',cluster='bionic',type='R',project='z.Power-Grand-Bassa-stepped-wedge' -e ./io/slurm-%A_%a.out -o ./io/slurm-%A_%a.out --constraint=gizmok run_r.sh
-# sbatch --depend=afterok:12 --export=run='last',cluster='bionic',type='R',project='z.Power-Grand-Bassa-stepped-wedge' -e ./io/slurm-%A_%a.out -o ./io/slurm-%A_%a.out --constraint=gizmok run_r.sh
+# sbatch --export=simba_run='first',cluster='bionic',type='R',project='z.Power-Grand-Bassa-stepped-wedge' -e ./io/slurm-%A_%a.out -o ./io/slurm-%A_%a.out --constraint=gizmok run_r.sh
+# sbatch --depend=afterok:11 --array=1-20 --export=simba_run='main',cluster='bionic',type='R',project='z.Power-Grand-Bassa-stepped-wedge' -e ./io/slurm-%A_%a.out -o ./io/slurm-%A_%a.out --constraint=gizmok run_r.sh
+# sbatch --depend=afterok:12 --export=simba_run='last',cluster='bionic',type='R',project='z.Power-Grand-Bassa-stepped-wedge' -e ./io/slurm-%A_%a.out -o ./io/slurm-%A_%a.out --constraint=gizmok run_r.sh
 
 if (cfg$run_or_update=="run") {
   

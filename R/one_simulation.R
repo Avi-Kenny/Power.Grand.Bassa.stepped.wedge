@@ -31,7 +31,7 @@ one_simulation <- function() {
   # Perform statistical analysis
   results <- perform_analysis(
     dataset = dataset_trans,
-    method = 999
+    method = L$method
   )
   
   return(c(
