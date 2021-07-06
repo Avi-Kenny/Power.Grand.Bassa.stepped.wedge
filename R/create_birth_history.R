@@ -9,6 +9,8 @@
 #'     the death probability
 #' @param re_tx A community-level random effect that acts as a multiplier for
 #'     the death probability
+#' @param tvte Boolean. Should data be generated with a time-varying treatment
+#'     effet?
 #' @param crossover_date The first month (CMC) at which the program was in the
 #'     intervention state
 #' @return A list representing the entire birth history for a single woman,
@@ -18,7 +20,7 @@
 #'     * `deathdates_cmc`: death dates of all children (in CMC)
 
 create_birth_history <- function(woman_age, program_effect, re_comm, re_tx,
-                                 crossover_date) {
+                                 tvte, crossover_date) {
   
   # Loop through woman-years to generate births
   # i is the "current age" of the woman
@@ -73,9 +75,14 @@ create_birth_history <- function(woman_age, program_effect, re_comm, re_tx,
           ca <- j - birthdates_cmc[i] - 1
           
           # Calculate "current" program effect
-          # !!!!! Currently modeling program effect onset as an "off/on switch"
           if (j > crossover_date) {
-            program_effect_now = program_effect * re_tx
+            if (tvte==TRUE) {
+              time_since_tx_start <- max(0,crossover_date-j)
+              tvte_factor <- min(time_since_tx_start/12,1)
+              program_effect_now = tvte_factor*program_effect * re_tx
+            } else {
+              program_effect_now = program_effect * re_tx
+            }
           } else {
             program_effect_now = 0
           }

@@ -63,11 +63,13 @@ transform_dataset <- function(dataset, recall_years) {
   )
   
   # Generate x_ij "treatment status" variable
+  # x_it is aggregated into 6-month periods
+  agg_level <- 6
   df_joined %<>% inner_join(df_crossover, by="community_id")
   df_joined %<>% mutate(
-    x_ij = as.integer(month>=crossover_date)
+    x_ij = as.integer(month>=crossover_date),
+    x_it = as.integer(ceiling(pmax(0,month-crossover_date)/agg_level))
   ) %>%
-    subset(select=-crossover_date) %>%
     arrange(community_id, month)
   
   # Join with other component dataframes
@@ -75,6 +77,13 @@ transform_dataset <- function(dataset, recall_years) {
   df_joined %<>% left_join(df_n, by=c("community_id", "month"))
   df_joined %<>% filter(!is.na(n_alive))
   df_joined$n_deaths %<>% replace_na(0)
+  
+  # Rescale time to start at 1
+  min_month <- min(df_joined$month)
+  df_joined %<>% mutate(
+    month = (month-min_month)+1,
+    crossover_date = (crossover_date-min_month)+1
+  )
   
   return(df_joined)
   

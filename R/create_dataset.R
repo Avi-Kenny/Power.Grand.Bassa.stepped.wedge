@@ -4,13 +4,15 @@
 #' @param program_effect Percent reduction in U5MR in intervention group
 #' @param re_comm_sd Standard deviation of the community-level random effect
 #' @param re_tx_sd Standard deviation of the treatment-level random effect
+#' @param tvte Boolean. Should data be generated with a time-varying treatment
+#'     effet?
 #' @param show_progress True/false; should progress statement ("5 of 999
 #'     communities generated") be printed?
 #' @return A list containing the women (a dataframe) and birth histories (a
 #'     list)
 
 create_dataset <- function(sample, program_effect, re_comm_sd, re_tx_sd,
-                           show_progress=FALSE) {
+                           tvte, show_progress=FALSE) {
   
   women <- data.frame(
     "woman_id" = integer(),
@@ -34,7 +36,7 @@ create_dataset <- function(sample, program_effect, re_comm_sd, re_tx_sd,
   
   # Sample random effects
   # The pmax() ensures that probabilities are not multiplied by a negative
-  #     number (although this is extremely unlikely for reasonable SDs)
+  #     number (although this is unlikely for reasonable SDs)
   re_comm <- rnorm(n=n_clusters, mean=1, sd=re_comm_sd)
   re_tx <- rnorm(n=n_clusters, mean=1, sd=re_tx_sd)
   re_comm <- pmax(re_comm,0)
@@ -93,6 +95,7 @@ create_dataset <- function(sample, program_effect, re_comm_sd, re_tx_sd,
             "program_effect" = program_effect,
             "re_comm" = re_comm[i],
             "re_tx" = re_tx[i],
+            "tvte" = tvte,
             "crossover_date" = crossover_date
           )
           

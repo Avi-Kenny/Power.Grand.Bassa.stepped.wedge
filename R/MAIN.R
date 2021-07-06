@@ -1,8 +1,6 @@
 # Title: Sample Size - Grand Bassa Stepped Wedge Impact Evaluation
 # Author: Avi Kenny, Marco Carone
 
-
-
 ##################.
 ##### CONFIG #####
 ##################.
@@ -12,8 +10,9 @@ cfg <- list(
   which_sim = "",
   level_set_which = "level_set_1",
   run_or_update = "run",
-  num_sim = 500, # !!!!!
-  pkgs = c("dplyr", "readxl", "tibble", "survival", "tidyr", "lme4", "glmmTMB"),
+  num_sim = 1000, # !!!!!
+  pkgs = c("dplyr", "readxl", "tibble", "survival", "tidyr", "lme4", "glmmTMB",
+           "stringr", "did"),
   pkgs_nocluster = c("ggplot2"),
   parallel = "none",
   stop_at_error = FALSE
@@ -74,6 +73,7 @@ if (Sys.getenv("simba_run") %in% c("first", "")) {
   level_set_1 <- list(
     sample_size = c(1000, 1733),
     program_effect = c(0, 0.2),
+    tvte = c(TRUE, FALSE),
     method = c("Mixed model (immediate Tx effect)",
                "Mixed model (time-varying Tx effect)",
                "Callaway-Sant'Anna")

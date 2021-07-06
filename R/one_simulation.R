@@ -19,6 +19,7 @@ one_simulation <- function() {
     program_effect = L$program_effect,
     re_comm_sd = 0.1,
     re_tx_sd = 0.1,
+    tvte = L$tvte,
     show_progress = FALSE
   )
   
@@ -30,7 +31,7 @@ one_simulation <- function() {
   
   # Perform statistical analysis
   results <- perform_analysis(
-    dataset = dataset_trans,
+    dataset_trans = dataset_trans,
     method = L$method
   )
   
