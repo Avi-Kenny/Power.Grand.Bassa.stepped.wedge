@@ -10,7 +10,7 @@ cfg <- list(
   which_sim = "",
   level_set_which = "level_set_1",
   run_or_update = "run",
-  num_sim = 1000, # !!!!!
+  num_sim = 40, # !!!!!
   pkgs = c("dplyr", "readxl", "tibble", "survival", "tidyr", "lme4", "glmmTMB",
            "stringr", "did"),
   pkgs_nocluster = c("ggplot2"),
@@ -52,14 +52,16 @@ if (load_pkgs_local) {
 
 # Load simba + functions
 # devtools::install_github("Avi-Kenny/simba")
-library(simba)
-source("one_simulation.R")
-source("create_dataset.R")
-source("create_birth_history.R")
-source("take_sample.R")
-source("transform_dataset.R")
-source("perform_analysis.R")
-source("helpers.R")
+{
+  library(simba)
+  source("one_simulation.R")
+  source("create_dataset.R")
+  source("create_birth_history.R")
+  source("take_sample.R")
+  source("transform_dataset.R")
+  source("perform_analysis.R")
+  source("helpers.R")
+}
 
 
 
@@ -71,7 +73,8 @@ if (Sys.getenv("simba_run") %in% c("first", "")) {
   
   # Compare all methods
   level_set_1 <- list(
-    sample_size = c(1000, 1733),
+    sample_size = 1000,
+    # sample_size = c(1000, 1733),
     program_effect = c(0, 0.2),
     tvte = c(TRUE, FALSE),
     method = c("Mixed model (immediate Tx effect)",
@@ -106,7 +109,7 @@ if (cfg$run_or_update=="run") {
         num_sim = cfg$num_sim,
         parallel = cfg$parallel,
         stop_at_error = cfg$stop_at_error,
-        seed = 1,
+        seed = 1000,
         packages = cfg$pkgs
       )
       sim <- do.call(set_levels, c(list(sim), level_set))

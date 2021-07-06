@@ -13,6 +13,7 @@ perform_analysis <- function(dataset_trans, method) {
   if (method=="Mixed model (immediate Tx effect)") {
     
     # Fit mixed model
+    # Currently treating time trend as linear
     model <- glmmTMB(
       cbind(n_deaths,n_alive-n_deaths) ~ x_ij + month +
         (1|community_id),
@@ -26,13 +27,14 @@ perform_analysis <- function(dataset_trans, method) {
     p <- s$coefficients$cond["x_ij","Pr(>|z|)"]
     reject_h0 <- as.integer(tx_effect<1 & p<0.05)
     
-    if (tx_effect>1 & p<0.05) warning("Treatment had 'negative effect'")
+    if (tx_effect>1 & p<0.05) warning("Treatment had 'opposite effect'")
     
   }
   
   if (method=="Mixed model (time-varying Tx effect)") {
     
     # Fit mixed model
+    # Currently treating time trend as linear
     model <- glmmTMB(
       cbind(n_deaths,n_alive-n_deaths) ~ factor(x_it) + month +
         (1|community_id),
@@ -59,7 +61,7 @@ perform_analysis <- function(dataset_trans, method) {
     p <- pchisq((log_tx_effect^2)/(se_log_tx_effect^2),1, lower.tail=F)
     reject_h0 <- as.integer(tx_effect<1 & p<0.05)
     
-    if (tx_effect>1 & p<0.05) warning("Treatment had 'negative effect'")
+    if (tx_effect>1 & p<0.05) warning("Treatment had 'opposite effect'")
 
   }
   
@@ -95,6 +97,8 @@ perform_analysis <- function(dataset_trans, method) {
       mort_rate = n_deaths/n_alive
     )
     
+    dataset_trans %<>% filter(!is.na(mort_rate))
+    
     out <- att_gt(
       yname = "mort_rate",
       tname = "time_period",
@@ -111,7 +115,9 @@ perform_analysis <- function(dataset_trans, method) {
     tx_effect <- es$overall.att
     se_tx_effect <- es$overall.se
     p <- pchisq((tx_effect^2)/(se_tx_effect^2),1, lower.tail=F)
-    reject_h0 <- as.integer(tx_effect<1 & p<0.05)
+    reject_h0 <- as.integer(tx_effect<0 & p<0.05)
+    
+    if (tx_effect>0 & p<0.05) warning("Treatment had 'opposite effect'")
     
   }
   

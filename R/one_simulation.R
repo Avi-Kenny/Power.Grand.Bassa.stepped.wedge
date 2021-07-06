@@ -4,14 +4,17 @@
 
 one_simulation <- function() {
   
+  # # !!!!! Testing
+  # set.seed(2112)
+  # C <- list(sampling_frame=sampling_frame)
+  # L <- list(sample_size=1000, program_effect=0.2, tvte=FALSE)
+  
   # Take a sample from population
   sample <- take_sample(
     sampling_frame = C$sampling_frame,
     n_clusters = L$sample_size,
     type = "SRS"
   )
-  
-  # Store number of households in sample
   
   # Generate data for sample
   dataset <- create_dataset(

@@ -77,9 +77,9 @@ create_birth_history <- function(woman_age, program_effect, re_comm, re_tx,
           # Calculate "current" program effect
           if (j > crossover_date) {
             if (tvte==TRUE) {
-              time_since_tx_start <- max(0,crossover_date-j)
+              time_since_tx_start <- j-crossover_date
               tvte_factor <- min(time_since_tx_start/12,1)
-              program_effect_now = tvte_factor*program_effect * re_tx
+              program_effect_now = tvte_factor * program_effect * re_tx
             } else {
               program_effect_now = program_effect * re_tx
             }
