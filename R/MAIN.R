@@ -10,7 +10,7 @@ cfg <- list(
   which_sim = "",
   level_set_which = "level_set_1",
   run_or_update = "run",
-  num_sim = 40, # !!!!!
+  num_sim = 1000,
   pkgs = c("dplyr", "readxl", "tibble", "survival", "tidyr", "lme4", "glmmTMB",
            "stringr", "did"),
   pkgs_nocluster = c("ggplot2"),
@@ -73,12 +73,12 @@ if (Sys.getenv("simba_run") %in% c("first", "")) {
   
   # Compare all methods
   level_set_1 <- list(
-    sample_size = 1000,
-    # sample_size = c(1000, 1733),
+    sample_size = c(1000, 1733),
     program_effect = c(0, 0.2),
     tvte = c(TRUE, FALSE),
     method = c("Mixed model (immediate Tx effect)",
                "Mixed model (time-varying Tx effect)",
+               "Mixed model (time-varying and random Tx effect)",
                "Callaway-Sant'Anna")
   )
   
