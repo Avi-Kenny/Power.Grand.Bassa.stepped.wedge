@@ -19,6 +19,20 @@ take_sample <- function(sampling_frame, n_clusters, type="SRS") {
     # Filter sampling frame
     sample <- sampling_frame %>% filter(community_id %in% sampled_comms)
     
+    # Modification to merge smaller communities into larger ones
+    pop <- 0
+    new_comm_ids <- c()
+    new_id <- 1
+    for (i in 1:nrow(sample)) {
+      new_comm_ids <- c(new_comm_ids, new_id)
+      pop <- pop + sample[i,"num_hh"]
+      if (pop>=100) {
+        pop <- 0
+        new_id <- new_id + 1
+      }
+    }
+    sample$community_id2 <- new_comm_ids
+    
   }
   
   return(sample)

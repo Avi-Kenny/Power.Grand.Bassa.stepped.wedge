@@ -73,13 +73,14 @@ if (Sys.getenv("simba_run") %in% c("first", "")) {
   
   # Compare all methods
   level_set_1 <- list(
-    sample_size = c(1000, 1733),
-    program_effect = c(0, 0.2),
-    tvte = c(TRUE, FALSE),
-    method = c("Mixed model (immediate Tx effect)",
-               "Mixed model (time-varying Tx effect)",
+    sample_size = c(1000, 1200, 1400, 1600),
+    program_effect = c(0,0.2),
+    tvte = TRUE, # c(TRUE, FALSE)
+    method = c("Mixed model (time-varying Tx effect)", # "Mixed model (immediate Tx effect)"  "Callaway-Sant'Anna"
+               "Fixed effects model (time-varying Tx effect) (grouped)",
                "Mixed model (time-varying and random Tx effect)",
-               "Callaway-Sant'Anna")
+               "Mixed model (time-varying Tx effect) (grouped)",
+               "Callaway-Sant'Anna (grouped)")
   )
   
   level_set <- eval(as.name(cfg$level_set_which))
@@ -109,7 +110,7 @@ if (cfg$run_or_update=="run") {
         num_sim = cfg$num_sim,
         parallel = cfg$parallel,
         stop_at_error = cfg$stop_at_error,
-        seed = 1000,
+        seed = 2112,
         packages = cfg$pkgs
       )
       sim <- do.call(set_levels, c(list(sim), level_set))
@@ -189,6 +190,14 @@ if (FALSE) {
   # Summarize results
   # !!!!! Revisit this
   sim %>% summarize() %>% print()
+  
+  summ <- sim %>% simba::summarize(
+    mean = list(x="reject_h0", na.rm=T)
+  )
+  
+  summ %>% filter(program_effect==0)
+  summ %>% filter(program_effect==0.2 & tvte==TRUE)
+  summ %>% filter(program_effect==0.2 & tvte==FALSE)
   
 }
 

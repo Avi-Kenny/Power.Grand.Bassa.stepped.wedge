@@ -2,9 +2,11 @@
 #'
 #' @param dataset A dataset returned by create_dataset()
 #' @param recall_years Number of recall years to use
+#' @param grouping Either 1 (use granular community IDs) or 2 (use grouped
+#'     community IDs)
 #' @return A dataset formatted such that one row represents one community-month
 
-transform_dataset <- function(dataset, recall_years) {
+transform_dataset <- function(dataset, recall_years, grouping) {
   
   # Create merged dataset; one row per child
   d <- inner_join(
@@ -15,6 +17,13 @@ transform_dataset <- function(dataset, recall_years) {
   d %<>% subset(select=-c(
     child_id, woman_id, household_id, admin_district, health_district
   ))
+  
+  if (grouping==1) {
+    d %<>% subset(select=-c(community_id2))
+  } else if (grouping==2) {
+    d %<>% subset(select=-c(community_id))
+    d %<>% dplyr::rename("community_id"=community_id2)
+  }
   
   # Number of U5 deaths, by community/month
   # The condition "deathdate-birthdate<60" is technically not necessary because

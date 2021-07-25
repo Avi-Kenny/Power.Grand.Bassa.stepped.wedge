@@ -17,6 +17,7 @@ one_simulation <- function() {
   )
   
   # Generate data for sample
+  # dataset <- readRDS("../data/gb_dataset.rds")
   dataset <- create_dataset(
     sample = sample,
     program_effect = L$program_effect,
@@ -27,9 +28,13 @@ one_simulation <- function() {
   )
   
   # Transform dataset for analysis
+  grouped_methods <- c("Fixed effects model (time-varying Tx effect) (grouped)",
+                       "Mixed model (time-varying Tx effect) (grouped)",
+                       "Callaway-Sant'Anna (grouped)")
   dataset_trans <- transform_dataset(
     dataset = dataset,
-    recall_years = 5
+    recall_years = 5,
+    grouping = ifelse(L$method %in% grouped_methods, 2, 1)
   )
   
   # Perform statistical analysis

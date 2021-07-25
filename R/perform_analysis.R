@@ -31,7 +31,8 @@ perform_analysis <- function(dataset_trans, method) {
     
   }
   
-  if (method=="Mixed model (time-varying Tx effect)") {
+  if (method %in% c("Mixed model (time-varying Tx effect)",
+                    "Mixed model (time-varying Tx effect) (grouped)")) {
     
     # Fit mixed model
     # Currently treating time trend as linear
@@ -62,7 +63,7 @@ perform_analysis <- function(dataset_trans, method) {
     reject_h0 <- as.integer(tx_effect<1 & p<0.05)
     
     if (tx_effect>1 & p<0.05) warning("Treatment had 'opposite effect'")
-
+    
   }
   
   if (method=="Mixed model (time-varying and random Tx effect)") {
@@ -99,7 +100,41 @@ perform_analysis <- function(dataset_trans, method) {
     
   }
   
-  if (method=="Callaway-Sant'Anna") {
+  if (method=="Fixed effects model (time-varying Tx effect) (grouped)") {
+    
+    # Fit fixed effects model
+    # Currently treating time trend as linear
+    model <- glmmTMB(
+      cbind(n_deaths,n_alive-n_deaths) ~ factor(x_it) + month +
+        factor(community_id),
+      data = dataset_trans,
+      family = "binomial" # binomial(link="log")
+    )
+    
+    # Calculate results
+    s <- summary(model)
+    coeff_names <- names(s$coefficients$cond[,1])
+    theta_l_hat <- as.numeric(s$coefficients$cond[,1])
+    sigma_l_hat <- vcov(model)$cond
+    indices <- c(1:length(coeff_names))
+    indices <- indices[str_sub(coeff_names,1,12)=="factor(x_it)"]
+    coeff_names <- coeff_names[indices]
+    theta_l_hat <- theta_l_hat[indices]
+    sigma_l_hat <- sigma_l_hat[indices,indices]
+    sigma_l_hat <- as.matrix(sigma_l_hat)
+    len <- length(coeff_names)
+    A <- (1/len) * matrix(rep(1,len), nrow=1)
+    log_tx_effect <- (A %*% theta_l_hat)[1,1]
+    tx_effect <- exp(log_tx_effect)
+    se_log_tx_effect <- sqrt(A %*% sigma_l_hat %*% t(A))[1,1]
+    p <- pchisq((log_tx_effect^2)/(se_log_tx_effect^2),1, lower.tail=F)
+    reject_h0 <- as.integer(tx_effect<1 & p<0.05)
+    
+    if (tx_effect>1 & p<0.05) warning("Treatment had 'opposite effect'")
+    
+  }
+  
+  if (method %in% c("Callaway-Sant'Anna", "Callaway-Sant'Anna (grouped)")) {
     
     # Transformations specific to CS method
     # This is somewhat problematic because it doesn't account for births that
@@ -143,7 +178,7 @@ perform_analysis <- function(dataset_trans, method) {
       est_method = "reg"
     )
     
-    es <- aggte(out, type = "dynamic")
+    es <- aggte(out, type="dynamic")
     
     # Calculate results
     tx_effect <- es$overall.att
