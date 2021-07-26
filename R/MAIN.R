@@ -73,13 +73,13 @@ if (Sys.getenv("simba_run") %in% c("first", "")) {
   
   # Compare all methods
   level_set_1 <- list(
-    sample_size = c(1000, 1200, 1400, 1600),
-    program_effect = c(0,0.2),
+    sample_size = c(1000, 1250, 1500, 1733),
+    program_effect = 0.2, # c(0,0.2)
     tvte = TRUE, # c(TRUE, FALSE)
     method = c("Mixed model (time-varying Tx effect)", # "Mixed model (immediate Tx effect)"  "Callaway-Sant'Anna"
                "Fixed effects model (time-varying Tx effect) (grouped)",
-               "Mixed model (time-varying and random Tx effect)",
-               "Mixed model (time-varying Tx effect) (grouped)",
+               # "Mixed model (time-varying and random Tx effect)",
+               # "Mixed model (time-varying Tx effect) (grouped)",
                "Callaway-Sant'Anna (grouped)")
   )
   
